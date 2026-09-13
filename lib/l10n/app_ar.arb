@@ -1,0 +1,22 @@
+{
+  "language": "اللغة",
+  "english": "الانجليزية",
+  "arabic": "العربية",
+  "theme": "النمط",
+  "dark": "ليلي",
+  "light": "نهاري",
+  "dark_mode": "الوضع الليلي",
+  "logout": "تسجيل الخروج",
+  "home": "الرئيسية",
+  "favorite": "المفضلة",
+  "profile": "الملف الشخصي",
+  "login_to_your_account": "تسجيل الدخول إلى حسابك",
+  "email_hint": "أدخل البريد الإلكتروني",
+  "password_hint": "أدخل كلمة المرور",
+  "forget_password": "نسيت كلمة المرور؟",
+  "login": "تسجيل الدخول",
+  "dont_have_account": "ليس لديك حساب؟ ",
+  "signup": "انشاء حساب",
+  "or": "أو",
+  "login_with_google": "الدخول باستخدام جوجل"
+}

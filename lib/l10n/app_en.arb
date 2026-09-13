@@ -1,0 +1,22 @@
+{
+  "language": "Language",
+  "english": "English",
+  "arabic": "Arabic",
+  "theme": "Theme",
+  "dark": "Dark",
+  "light": "Light",
+  "dark_mode": "Dark mode",
+  "logout": "Logout",
+  "home": "Home",
+  "favorite": "Favorite",
+  "profile": "Profile",
+  "login_to_your_account": "Login to your account",
+  "email_hint": "Enter your email",
+  "password_hint": "Enter your password",
+  "forget_password": "Forget Password?",
+  "login": "Login",
+  "dont_have_account": "Don't have an account ? ",
+  "signup": "Signup",
+  "or": "Or",
+  "login_with_google": "Login with Google"
+}
