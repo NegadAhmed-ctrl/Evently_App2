@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/l10n/app_localizations.dart';
+import 'package:flutter_application_1/ui/add_event/add_event.dart';
 import 'package:flutter_application_1/ui/home/tabs/profile/favorite/favorite_tab.dart';
 import 'package:flutter_application_1/ui/home/tabs/profile/home/home_tab.dart';
 import 'package:flutter_application_1/ui/home/tabs/profile/profile_tab.dart';
 import 'package:flutter_application_1/utils/app_colors.dart';
+import 'package:flutter_application_1/ui/add_event/add_event.dart';
 
 class HomeScreen extends StatefulWidget {
   HomeScreen({super.key});
@@ -48,7 +50,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: tabsList[SelectedIndex],
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddEvent()),
+          );
+        },
         child: Icon(Icons.add, color: AppColors.whiteColor, size: 25),
       ),
     );

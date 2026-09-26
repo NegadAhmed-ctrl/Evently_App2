@@ -4,6 +4,10 @@ import 'app_styles.dart';
 
 class AppTheme {
   static final ThemeData lightTheme = ThemeData(
+    appBarTheme: AppBarThemeData(
+      backgroundColor: AppColors.transparentColor,
+      centerTitle: true,
+    ),
     scaffoldBackgroundColor: AppColors.lightBgColor,
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: AppColors.whiteColor,
