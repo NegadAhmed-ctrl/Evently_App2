@@ -129,8 +129,7 @@ class _HomeTabState extends State<HomeTab> {
                         ? eventlist
                         : eventlist
                               .where(
-                                (event) =>
-                                    event.eventCategoryIndex == selectedIndex,
+                                (event) => event.categoryIndex == selectedIndex,
                               )
                               .toList();
 

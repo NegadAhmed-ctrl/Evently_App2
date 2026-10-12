@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/firebase_utils.dart';
 import 'package:flutter_application_1/l10n/app_localizations.dart';
@@ -7,8 +8,21 @@ import 'package:flutter_application_1/ui/widgets/custom_text_field.dart';
 import 'package:flutter_application_1/ui/widgets/event_item.dart';
 import 'package:flutter_application_1/utils/size_utils.dart';
 
-class FavoriteTab extends StatelessWidget {
+class FavoriteTab extends StatefulWidget {
   const FavoriteTab({super.key});
+
+  @override
+  State<FavoriteTab> createState() => _FavoriteTabState();
+}
+
+class _FavoriteTabState extends State<FavoriteTab> {
+  final TextEditingController searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,32 +37,34 @@ class FavoriteTab extends StatelessWidget {
             vertical: height * 0.02,
           ),
           child: Column(
-            spacing: height * 0.02,
             children: [
               CustomTextField(
-                borderColor: Theme.of(context).dividerColor,
+                controller: searchController, // ✅ ضفنا الكنترولر المطلوب
                 hintText: AppLocalizations.of(context)!.search_for_event,
-                hintStyle: Theme.of(context).textTheme.bodyLarge,
-                style: Theme.of(context).textTheme.bodySmall,
-                sufix: Icon(
+                prefixIcon: Icon(
                   Icons.search,
                   size: 25,
-                  color: Theme.of(context).cardColor,
+                  color: Theme.of(context).iconTheme.color,
                 ),
               ),
+              SizedBox(height: height * 0.02),
               Expanded(
                 child: StreamBuilder<QuerySnapshot<Event>>(
-                  // ✅ بيجيب بس الـ events اللي isFavorite == true
+                  // ✅ بيجيب بس الـ events اللي isFavorite == true وتخص اليوزر الحالي بس
                   stream: FirebaseUtils.getEventsCollection()
-                      .where("is_favorite", isEqualTo: true)
+                      .where(
+                        'userId',
+                        isEqualTo: FirebaseAuth.instance.currentUser?.uid ?? '',
+                      )
+                      .where('isFavorite', isEqualTo: true)
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
+                      return const Center(child: CircularProgressIndicator());
                     }
 
                     if (snapshot.hasError) {
-                      return Center(child: Text("Something went wrong!"));
+                      return const Center(child: Text("Something went wrong!"));
                     }
 
                     var favoriteList =

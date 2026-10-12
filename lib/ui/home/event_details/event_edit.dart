@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/firebase_utils.dart';
+import 'package:flutter_application_1/l10n/provider/app_theme_provider.dart'; // ✅ جديد
 import 'package:flutter_application_1/models/event.dart';
 import 'package:flutter_application_1/utils/app_colors.dart';
 import 'package:flutter_application_1/utils/size_utils.dart';
+import 'package:provider/provider.dart'; // ✅ جديد
 
 class EditEventScreen extends StatefulWidget {
   static const String routeName = 'edit_event';
@@ -16,7 +18,6 @@ class EditEventScreen extends StatefulWidget {
 class _EditEventScreenState extends State<EditEventScreen> {
   late TextEditingController titleController;
   late TextEditingController descriptionController;
-  late String selectedImage;
   late String selectedCategory;
   late DateTime selectedDate;
   late TimeOfDay selectedTime;
@@ -28,12 +29,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
     super.didChangeDependencies();
     if (isInit) {
       final Event event = ModalRoute.of(context)!.settings.arguments as Event;
-      titleController = TextEditingController(text: event.eventTitle);
-      descriptionController = TextEditingController(
-        text: event.eventDescription,
-      );
-      selectedImage = event.eventimage;
-      selectedCategory = event.eventName;
+      titleController = TextEditingController(text: event.title);
+      descriptionController = TextEditingController(text: event.description);
+      selectedCategory = event.categoryName;
       selectedDate = event.dateTime;
       selectedTime = TimeOfDay.fromDateTime(event.dateTime);
       isInit = false;
@@ -56,6 +54,30 @@ class _EditEventScreenState extends State<EditEventScreen> {
       "Dec",
     ];
     return months[month - 1];
+  }
+
+  String _getImageForCategory(int index, bool isDark) {
+    List<String> lightImages = [
+      'assets/images/sport_light.png',
+      'assets/images/Birthday_light.png',
+      'assets/images/meeting_light.png',
+      'assets/images/Exhibition_light.png',
+      'assets/images/book club_light.png',
+    ];
+    List<String> darkImages = [
+      'assets/images/sport_black.png',
+      'assets/images/Birthday_Dark.png',
+      'assets/images/meeting_dark.png',
+      'assets/images/Exhibition_dark.png',
+      'assets/images/BookClub_dark.png',
+    ];
+    int safeIndex = (index > 0) ? index - 1 : 0;
+    if (safeIndex >= 0 && safeIndex < lightImages.length) {
+      return isDark ? darkImages[safeIndex] : lightImages[safeIndex];
+    }
+    return isDark
+        ? 'assets/images/sport_black.png'
+        : 'assets/images/sport_light.png';
   }
 
   Future<void> _selectDate() async {
@@ -89,6 +111,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
     final Event event = ModalRoute.of(context)!.settings.arguments as Event;
     var height = context.height;
     var width = context.width;
+    var themeProvider = Provider.of<AppThemeProvider>(
+      context,
+    ); // ✅ استدعاء الثيم
 
     return Scaffold(
       appBar: AppBar(
@@ -111,7 +136,12 @@ class _EditEventScreenState extends State<EditEventScreen> {
                 borderRadius: BorderRadius.circular(24),
                 image: DecorationImage(
                   fit: BoxFit.fill,
-                  image: AssetImage(selectedImage),
+                  image: AssetImage(
+                    _getImageForCategory(
+                      event.categoryIndex,
+                      themeProvider.isDark,
+                    ),
+                  ), // ✅ تطبيق التعديل
                 ),
               ),
             ),
@@ -225,8 +255,8 @@ class _EditEventScreenState extends State<EditEventScreen> {
                   ),
                 ),
                 onPressed: () async {
-                  event.eventTitle = titleController.text;
-                  event.eventDescription = descriptionController.text;
+                  event.title = titleController.text;
+                  event.description = descriptionController.text;
                   event.dateTime = DateTime(
                     selectedDate.year,
                     selectedDate.month,

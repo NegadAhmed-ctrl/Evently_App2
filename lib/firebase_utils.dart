@@ -1,41 +1,46 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_application_1/models/event.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter/material.dart';
+import 'models/event.dart';
 
 class FirebaseUtils {
   static CollectionReference<Event> getEventsCollection() {
     return FirebaseFirestore.instance
-        .collection(Event.collectionName)
+        .collection('events')
         .withConverter<Event>(
-          fromFirestore: (snapshot, options) =>
-              Event.fromjasonFireStore(snapshot.data()!),
-          toFirestore: (event, options) => event.tojasonFireStore(),
+          fromFirestore: (snapshot, options) {
+            return Event.fromJsonFireStore(snapshot.data()!);
+          },
+          toFirestore: (event, options) {
+            return event.toJsonFireStore();
+          },
         );
   }
 
-  static Future<void> addEventToFireStore(Event event) {
-    CollectionReference<Event> collectionRef = getEventsCollection();
-    DocumentReference<Event> docRef = collectionRef.doc();
+  static Future<void> addEvent(Event event) {
+    var collection = getEventsCollection();
+    var docRef = collection.doc();
     event.id = docRef.id;
+    event.userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     return docRef.set(event);
   }
 
-  static Future<void> updateFavorite(Event event) {
-    return getEventsCollection().doc(event.id).update({
-      "is_favorite": event.isFavorite,
-    });
+  static Future<void> deleteEvent(String id) {
+    var collection = getEventsCollection();
+    return collection.doc(id).delete();
   }
 
   static Future<void> updateEvent(Event event) {
-    return getEventsCollection().doc(event.id).update(event.tojasonFireStore());
+    var collection = getEventsCollection();
+    return collection.doc(event.id).update(event.toJsonFireStore());
   }
 
-  static Future<void> deleteEvent(String eventId) {
-    return getEventsCollection().doc(eventId).delete();
+  static Stream<QuerySnapshot<Event>> getEventsStream() {
+    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    return getEventsCollection().where('userId', isEqualTo: userId).snapshots();
   }
 
+  // إضافة الدالة اللي كانت ناقصة وعاملة إيرور في شاشة اللوجين
   static Future<User?> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
@@ -43,17 +48,16 @@ class FirebaseUtils {
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
-
-      final credential = GoogleAuthProvider.credential(
+      final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      UserCredential userCredential = await FirebaseAuth.instance
+      final UserCredential userCredential = await FirebaseAuth.instance
           .signInWithCredential(credential);
       return userCredential.user;
     } catch (e) {
-      debugPrint("Google Sign In Error: $e");
+      print("Error during Google Sign In: $e");
       return null;
     }
   }

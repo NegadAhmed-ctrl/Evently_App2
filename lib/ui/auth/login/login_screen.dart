@@ -1,24 +1,83 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/firebase_utils.dart';
-import 'package:flutter_application_1/l10n/app_localizations.dart';
 import 'package:flutter_application_1/l10n/provider/app_theme_provider.dart';
 import 'package:flutter_application_1/ui/widgets/custom_elevated_bottom.dart';
 import 'package:flutter_application_1/ui/widgets/custom_text_field.dart';
 import 'package:flutter_application_1/utils/app_assets.dart';
 import 'package:flutter_application_1/utils/app_colors.dart';
 import 'package:flutter_application_1/utils/app_routes.dart';
-import 'package:flutter_application_1/utils/app_styles.dart';
 import 'package:flutter_application_1/utils/size_utils.dart';
 import 'package:flutter_application_1/utils/toast_utiles.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
-class LoginScreen extends StatelessWidget {
-  LoginScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
-  final emailcontroller = TextEditingController();
-  final passwordcontroller = TextEditingController();
-  final formkey = GlobalKey<FormState>();
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+  bool isObscure = true;
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _resetPassword() async {
+    if (emailController.text.isEmpty) {
+      ToastUtiles.toastMsg(
+        msg: "Please enter your email first to reset password",
+        backgroundColor: Colors.orange,
+        textColor: Colors.white,
+      );
+      return;
+    }
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+        email: emailController.text.trim(),
+      );
+      ToastUtiles.toastMsg(
+        msg: "Password reset email sent! Check your inbox.",
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+      );
+    } catch (e) {
+      ToastUtiles.toastMsg(
+        msg: e.toString(),
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    }
+  }
+
+  void _login() async {
+    if (formKey.currentState?.validate() == true) {
+      try {
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: emailController.text.trim(),
+          password: passwordController.text,
+        );
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, AppRoutes.homeRouteName);
+        }
+      } catch (e) {
+        ToastUtiles.toastMsg(
+          msg: "Login Failed: ${e.toString()}",
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,185 +87,172 @@ class LoginScreen extends StatelessWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: width * 0.04,
-              vertical: height * 0.02,
-            ),
-            child: Form(
-              key: formkey,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: width * 0.04),
+          child: Form(
+            key: formKey,
+            child: SingleChildScrollView(
               child: Column(
-                spacing: height * 0.02,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  SizedBox(height: height * 0.05),
                   Image.asset(
                     themeProvider.isDark
-                        ? AppAssets.logoDarkImage
-                        : AppAssets.logoLightImage,
+                        ? AppAssets.eventlyLogoDark
+                        : AppAssets.eventlyLogo,
+                    height: height * 0.1,
                   ),
-
-                  Text(
-                    AppLocalizations.of(context)!.login_to_your_account,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-
+                  SizedBox(height: height * 0.05),
                   CustomTextField(
-                    hintText: AppLocalizations.of(context)!.email_hint,
-                    hintStyle: Theme.of(context).textTheme.bodyLarge,
-                    prefix: Icon(Icons.email, color: AppColors.disableColor),
-                    controller: emailcontroller,
-                    keybordType: TextInputType.emailAddress,
+                    controller: emailController,
+                    hintText: "Email",
+                    prefixIcon: Icon(
+                      Icons.email,
+                      color: Theme.of(context).iconTheme.color,
+                    ),
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Please Enter Email";
+                      if (value == null || value.isEmpty) {
+                        return "Please enter your email";
                       }
-
-                      final bool emailValid = RegExp(
-                        r"^[\w.+-]+@[\w-]+(\.[\w-]+)+$",
-                      ).hasMatch(value.trim());
-
-                      if (!emailValid) {
-                        return "Please Enter Valid Email";
-                      }
-
                       return null;
                     },
                   ),
-
+                  SizedBox(height: height * 0.02),
                   CustomTextField(
-                    style: Theme.of(context).textTheme.bodySmall,
-                    hintText: AppLocalizations.of(context)!.password_hint,
-                    hintStyle: Theme.of(context).textTheme.bodyLarge,
-                    keybordType: TextInputType.visiblePassword,
-                    prefix: Icon(
-                      Icons.lock_open_outlined,
-                      color: AppColors.disableColor,
+                    controller: passwordController,
+                    hintText: "Password",
+                    obscureText: isObscure,
+                    prefixIcon: Icon(
+                      Icons.lock,
+                      color: Theme.of(context).iconTheme.color,
                     ),
-                    sufix: Icon(
-                      Icons.visibility_off_outlined,
-                      color: AppColors.disableColor,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        isObscure ? Icons.visibility_off : Icons.visibility,
+                        color: Theme.of(context).iconTheme.color,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          isObscure = !isObscure;
+                        });
+                      },
                     ),
-                    controller: passwordcontroller,
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Please Enter Password";
+                      if (value == null || value.isEmpty) {
+                        return "Please enter your password";
                       }
-
-                      if (value.length < 6) {
-                        return "Password Should be at least 6 chars";
-                      }
-
                       return null;
                     },
                   ),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () {},
-                        child: Text(
-                          AppLocalizations.of(context)!.forget_password,
-                          style: Theme.of(context).textTheme.labelLarge
-                              ?.copyWith(
-                                decoration: TextDecoration.underline,
-                                decorationColor: Theme.of(context).dividerColor,
-                              ),
+                  SizedBox(height: height * 0.01),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _resetPassword,
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text(
+                        "Forgot Password?",
+                        style: TextStyle(
+                          color: AppColors.mainLightColor,
+                          decoration: TextDecoration.underline,
+                          decorationColor: AppColors.mainLightColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
                         ),
                       ),
-                    ],
-                  ),
-
-                  CustomElevatedBottom(
-                    onPressed: () => login(context),
-                    child: Text(
-                      AppLocalizations.of(context)!.login,
-                      style: AppStyles.medium18White,
                     ),
                   ),
-
+                  SizedBox(height: height * 0.03),
+                  CustomElevatedBottom(
+                    backgroundcolor: themeProvider.isDark
+                        ? AppColors.mainDarkColor
+                        : AppColors.mainLightColor,
+                    onPressed: _login,
+                    child: const Text(
+                      "Login",
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
+                  ),
+                  SizedBox(height: height * 0.03),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        AppLocalizations.of(context)!.dont_have_account,
-                        style: Theme.of(context).textTheme.bodyLarge,
+                        "Don't have an account? ",
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(
+                      InkWell(
+                        onTap: () {
+                          // ✅ تم التعديل هنا لـ onTap
+                          Navigator.pushNamed(
                             context,
-                          ).pushNamed(AppRoutes.registerRouteName);
+                            AppRoutes.registerRouteName,
+                          );
                         },
-                        child: Text(
-                          AppLocalizations.of(context)!.signup,
-                          style: Theme.of(context).textTheme.labelLarge
-                              ?.copyWith(
-                                decoration: TextDecoration.underline,
-                                decorationColor: Theme.of(context).cardColor,
-                              ),
+                        child: const Text(
+                          "Register",
+                          style: TextStyle(
+                            color: AppColors.mainLightColor,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                            decorationColor: AppColors.mainLightColor,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ],
                   ),
-
+                  SizedBox(height: height * 0.03),
                   Row(
                     children: [
                       Expanded(
                         child: Divider(
                           color: Theme.of(context).dividerColor,
-                          thickness: 2,
-                          indent: width * 0.02,
-                          endIndent: width * 0.06,
+                          thickness: 1,
                         ),
                       ),
-                      Text(AppLocalizations.of(context)!.or),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: width * 0.04),
+                        child: Text(
+                          "OR",
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
                       Expanded(
                         child: Divider(
                           color: Theme.of(context).dividerColor,
-                          thickness: 2,
-                          indent: width * 0.06,
-                          endIndent: width * 0.02,
+                          thickness: 1,
                         ),
                       ),
                     ],
                   ),
-
                   SizedBox(height: height * 0.03),
-
-                  CustomElevatedBottom(
-                    bordercolor: Theme.of(context).dividerColor,
-                    pading: height * 0.02,
-                    backgroundcolor: Theme.of(context).highlightColor,
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).highlightColor,
+                      padding: EdgeInsets.symmetric(vertical: height * 0.015),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: Theme.of(context).dividerColor),
+                      ),
+                    ),
                     onPressed: () async {
                       User? user = await FirebaseUtils.signInWithGoogle();
-
-                      if (user != null) {
-                        ToastUtiles.toastMsg(
-                          msg: "Google Login Successfully",
-                          backgroundColor: Colors.green,
-                          textColor: AppColors.whiteColor,
+                      if (user != null && mounted) {
+                        Navigator.pushReplacementNamed(
+                          context,
+                          AppRoutes.homeRouteName,
                         );
-                        if (context.mounted) {
-                          Navigator.of(
-                            context,
-                          ).pushReplacementNamed(AppRoutes.homeRouteName);
-                        }
-                      } else {
-                        _showError("Google Login Failed");
                       }
                     },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      spacing: width * 0.04,
-                      children: [
-                        Image.asset(AppAssets.googleLogo),
-                        Text(
-                          AppLocalizations.of(context)!.login_with_google,
-                          style: Theme.of(context).textTheme.labelSmall,
-                        ),
-                      ],
+                    icon: Image.asset(AppAssets.googleLogo, height: 24),
+                    label: Text(
+                      "Sign in with Google",
+                      style: Theme.of(context).textTheme.titleSmall,
                     ),
                   ),
                 ],
@@ -216,66 +262,5 @@ class LoginScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  void _showError(String msg) {
-    ToastUtiles.toastMsg(
-      msg: msg,
-      backgroundColor: AppColors.redColor,
-      textColor: AppColors.whiteColor,
-    );
-  }
-
-  Future<void> login(BuildContext context) async {
-    if (formkey.currentState?.validate() != true) return;
-
-    try {
-      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailcontroller.text.trim(),
-        password: passwordcontroller.text,
-      );
-
-      ToastUtiles.toastMsg(
-        msg: "Login successfully",
-        backgroundColor: Colors.green,
-        textColor: AppColors.whiteColor,
-      );
-
-      debugPrint("id: ${credential.user?.uid}");
-
-      if (context.mounted) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.homeRouteName);
-      }
-    } on FirebaseAuthException catch (e) {
-      switch (e.code) {
-        case 'invalid-credential':
-        case 'user-not-found':
-        case 'wrong-password':
-          _showError("Email or password incorrect");
-          break;
-
-        case 'invalid-email':
-          _showError("Invalid email format");
-          break;
-
-        case 'user-disabled':
-          _showError("This account has been disabled");
-          break;
-
-        case 'too-many-requests':
-          _showError("Too many attempts, try again later");
-          break;
-
-        case 'network-request-failed':
-          _showError("No Internet Connection");
-          break;
-
-        default:
-          _showError("Something went wrong, try again");
-      }
-    } catch (e) {
-      debugPrint(e.toString());
-      _showError("Something went wrong, try again");
-    }
   }
 }

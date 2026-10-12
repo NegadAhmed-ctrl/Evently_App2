@@ -1,50 +1,59 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Event {
-  static const String collectionName = "Events";
-
   String id;
-  String eventimage;
-  String eventName;
-  String eventTitle;
-  String eventDescription;
+  String title;
+  String description;
+  int categoryIndex;
+  String categoryName;
   DateTime dateTime;
+  String location;
   bool isFavorite;
-  int eventCategoryIndex;
+  String userId;
 
   Event({
-    this.id = "",
-    required this.eventName,
-    required this.eventimage,
-    required this.eventTitle,
-    required this.eventDescription,
+    this.id = '',
+    required this.title,
+    required this.description,
+    required this.categoryIndex,
+    required this.categoryName,
     required this.dateTime,
+    required this.location,
     this.isFavorite = false,
-    required this.eventCategoryIndex,
+    required this.userId,
   });
 
-  Event.fromjasonFireStore(Map<String, dynamic> data)
-    : this(
-        id: data["id"] ?? "",
-        eventName: data["event_name"],
-        eventDescription: data["event_description"],
-        eventTitle: data["event_title"],
-        eventimage: data["event_image"],
-        dateTime: (data["date_time"] as Timestamp).toDate(),
-        isFavorite: data["is_favorite"],
-        eventCategoryIndex: data["eventCategoryIndex"] ?? 0,
-      );
+  factory Event.fromJsonFireStore(Map<String, dynamic> json) {
+    return Event(
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? json['eventTitle'] as String? ?? '',
+      description:
+          json['description'] as String? ??
+          json['eventDescription'] as String? ??
+          '',
+      categoryIndex:
+          json['categoryIndex'] as int? ??
+          json['eventCategoryIndex'] as int? ??
+          0,
+      categoryName: json['categoryName'] as String? ?? '',
+      dateTime: DateTime.fromMillisecondsSinceEpoch(
+        json['dateTime'] as int? ?? 0,
+      ),
+      location: json['location'] as String? ?? '',
+      isFavorite: json['isFavorite'] as bool? ?? false,
+      userId: json['userId'] as String? ?? '',
+    );
+  }
 
-  Map<String, dynamic> tojasonFireStore() {
+  Map<String, dynamic> toJsonFireStore() {
     return {
-      "id": id,
-      "event_name": eventName,
-      "event_title": eventTitle,
-      "event_image": eventimage,
-      "event_description": eventDescription,
-      "date_time": dateTime,
-      "is_favorite": isFavorite,
-      "eventCategoryIndex": eventCategoryIndex, // ✅ added
+      'id': id,
+      'title': title,
+      'description': description,
+      'categoryIndex': categoryIndex,
+      'categoryName': categoryName,
+      'dateTime': dateTime.millisecondsSinceEpoch,
+      'location': location,
+      'isFavorite': isFavorite,
+      'userId': userId,
     };
   }
 }

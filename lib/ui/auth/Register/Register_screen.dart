@@ -1,25 +1,71 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/l10n/app_localizations.dart';
 import 'package:flutter_application_1/l10n/provider/app_theme_provider.dart';
 import 'package:flutter_application_1/ui/widgets/custom_elevated_bottom.dart';
 import 'package:flutter_application_1/ui/widgets/custom_text_field.dart';
 import 'package:flutter_application_1/utils/app_assets.dart';
 import 'package:flutter_application_1/utils/app_colors.dart';
 import 'package:flutter_application_1/utils/app_routes.dart';
-import 'package:flutter_application_1/utils/app_styles.dart';
-import 'package:flutter_application_1/utils/app_theme.dart';
 import 'package:flutter_application_1/utils/size_utils.dart';
 import 'package:flutter_application_1/utils/toast_utiles.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
-class RegisterScreen extends StatelessWidget {
-  RegisterScreen({super.key});
-  final namecontroller = TextEditingController();
-  final emailcontroller = TextEditingController();
-  final passwordcontroller = TextEditingController();
-  final rePasswordcontroller = TextEditingController();
-  final formkey = GlobalKey<FormState>();
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController rePasswordController = TextEditingController();
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+  bool isObscure = true;
+  bool isObscureRe = true;
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    rePasswordController.dispose();
+    super.dispose();
+  }
+
+  void _register() async {
+    if (formKey.currentState?.validate() == true) {
+      try {
+        UserCredential userCredential = await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(
+              email: emailController.text.trim(),
+              password: passwordController.text,
+            );
+
+        await userCredential.user?.updateDisplayName(
+          nameController.text.trim(),
+        );
+
+        if (mounted) {
+          ToastUtiles.toastMsg(
+            msg: "Account created successfully!",
+            backgroundColor: Colors.green,
+            textColor: Colors.white,
+          );
+          Navigator.pushReplacementNamed(context, AppRoutes.homeRouteName);
+        }
+      } catch (e) {
+        ToastUtiles.toastMsg(
+          msg: "Registration Failed: ${e.toString()}",
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,186 +74,139 @@ class RegisterScreen extends StatelessWidget {
     var themeProvider = Provider.of<AppThemeProvider>(context);
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: IconThemeData(
+          color: themeProvider.isDark
+              ? AppColors.whiteColor
+              : AppColors.mainLightColor,
+        ),
+      ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: width * 0.04,
-              vertical: height * 0.02,
-            ),
-            child: Form(
-              key: formkey,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: width * 0.04),
+          child: Form(
+            key: formKey,
+            child: SingleChildScrollView(
               child: Column(
-                spacing: height * 0.02,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Image.asset(
                     themeProvider.isDark
-                        ? AppAssets.logoDarkImage
-                        : AppAssets.logoLightImage,
+                        ? AppAssets.eventlyLogoDark
+                        : AppAssets.eventlyLogo,
+                    height: height * 0.1,
                   ),
-                  Text(
-                    AppLocalizations.of(context)!.create_your_account,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
+                  SizedBox(height: height * 0.05),
                   CustomTextField(
-                    hintText: AppLocalizations.of(context)!.name_hint,
-                    hintStyle: Theme.of(context).textTheme.bodyLarge,
-                    prefix: Icon(
-                      Icons.person_2_outlined,
-                      color: AppColors.disableColor,
+                    controller: nameController,
+                    hintText: "Name",
+                    prefixIcon: Icon(
+                      Icons.person,
+                      color: Theme.of(context).iconTheme.color,
                     ),
-                    controller: namecontroller,
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Please Enter Name";
-                      }
-                      return null;
-                    },
-                  ),
-
-                  CustomTextField(
-                    hintText: AppLocalizations.of(context)!.email_hint,
-                    hintStyle: Theme.of(context).textTheme.bodyLarge,
-                    prefix: Icon(Icons.email, color: AppColors.disableColor),
-                    controller: emailcontroller,
-                    keybordType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Please Enter Email";
-                      }
-
-                      final bool emailValid = RegExp(
-                        r"^[\w.+-]+@[\w-]+(\.[\w-]+)+$",
-                      ).hasMatch(value.trim());
-                      if (!emailValid) {
-                        return "Please Enter Valid Email";
-                      }
-
-                      return null;
-                    },
-                  ),
-                  CustomTextField(
-                    style: Theme.of(context).textTheme.bodySmall,
-                    hintText: AppLocalizations.of(context)!.password_hint,
-                    hintStyle: Theme.of(context).textTheme.bodyLarge,
-                    keybordType: TextInputType.visiblePassword,
-                    prefix: Icon(
-                      Icons.lock_open_outlined,
-                      color: AppColors.disableColor,
-                    ),
-                    sufix: Icon(
-                      Icons.visibility_off_outlined,
-                      color: AppColors.disableColor,
-                    ),
-                    controller: passwordcontroller,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Please Enter Password";
-                      }
-                      if (value.length < 6) {
-                        return "Password Should be at least 6 chars";
-                      }
-                      return null;
-                    },
-                  ),
-
-                  CustomTextField(
-                    style: Theme.of(context).textTheme.bodySmall,
-                    hintText: AppLocalizations.of(
-                      context,
-                    )!.confirm_password_hint,
-                    hintStyle: Theme.of(context).textTheme.bodyLarge,
-                    keybordType: TextInputType.visiblePassword,
-                    prefix: Icon(
-                      Icons.lock_open_outlined,
-                      color: AppColors.disableColor,
-                    ),
-                    sufix: Icon(
-                      Icons.visibility_off_outlined,
-                      color: AppColors.disableColor,
-                    ),
-                    controller: rePasswordcontroller,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Please Enter Password";
-                      }
-                      if (value != passwordcontroller.text) {
-                        return "Re-Password does not match";
-                      }
+                      if (value == null || value.isEmpty)
+                        return "Please enter your name";
                       return null;
                     },
                   ),
                   SizedBox(height: height * 0.02),
-
+                  CustomTextField(
+                    controller: emailController,
+                    hintText: "Email",
+                    prefixIcon: Icon(
+                      Icons.email,
+                      color: Theme.of(context).iconTheme.color,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty)
+                        return "Please enter your email";
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: height * 0.02),
+                  CustomTextField(
+                    controller: passwordController,
+                    hintText: "Password",
+                    obscureText: isObscure,
+                    prefixIcon: Icon(
+                      Icons.lock,
+                      color: Theme.of(context).iconTheme.color,
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        isObscure ? Icons.visibility_off : Icons.visibility,
+                        color: Theme.of(context).iconTheme.color,
+                      ),
+                      onPressed: () => setState(() => isObscure = !isObscure),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.length < 6)
+                        return "Password must be at least 6 characters";
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: height * 0.02),
+                  CustomTextField(
+                    controller: rePasswordController,
+                    hintText: "Re-enter Password",
+                    obscureText: isObscureRe,
+                    prefixIcon: Icon(
+                      Icons.lock_outline,
+                      color: Theme.of(context).iconTheme.color,
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        isObscureRe ? Icons.visibility_off : Icons.visibility,
+                        color: Theme.of(context).iconTheme.color,
+                      ),
+                      onPressed: () =>
+                          setState(() => isObscureRe = !isObscureRe),
+                    ),
+                    validator: (value) {
+                      if (value != passwordController.text)
+                        return "Passwords do not match";
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: height * 0.04),
                   CustomElevatedBottom(
-                    onPressed: () => register(context),
-                    child: Text(
-                      AppLocalizations.of(context)!.signup,
-                      style: AppStyles.medium18White,
+                    backgroundcolor: themeProvider.isDark
+                        ? AppColors.mainDarkColor
+                        : AppColors.mainLightColor,
+                    onPressed: _register,
+                    child: const Text(
+                      "Create Account",
+                      style: TextStyle(color: Colors.white, fontSize: 18),
                     ),
                   ),
+                  SizedBox(height: height * 0.03),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        AppLocalizations.of(context)!.already_have_account,
-                        style: Theme.of(context).textTheme.bodyLarge,
+                        "Already have an account? ",
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
-                      TextButton(
-                        onPressed: () {
+                      InkWell(
+                        onTap: () {
+                          // ✅ تم التعديل هنا لـ onTap
                           Navigator.pop(context);
                         },
-                        child: Text(
-                          AppLocalizations.of(context)!.login,
-                          style: Theme.of(context).textTheme.labelLarge
-                              ?.copyWith(
-                                decoration: TextDecoration.underline,
-                                decorationColor: Theme.of(context).cardColor,
-                              ),
+                        child: const Text(
+                          "Login",
+                          style: TextStyle(
+                            color: AppColors.mainLightColor,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                            decorationColor: AppColors.mainLightColor,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ],
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Divider(
-                          color: Theme.of(context).dividerColor,
-                          thickness: 2,
-                          indent: width * 0.02,
-                          endIndent: width * 0.06,
-                        ),
-                      ),
-                      Text(AppLocalizations.of(context)!.or),
-                      Expanded(
-                        child: Divider(
-                          color: Theme.of(context).dividerColor,
-                          thickness: 2,
-                          indent: width * 0.06,
-                          endIndent: width * 0.02,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: height * 0.01),
-
-                  CustomElevatedBottom(
-                    bordercolor: Theme.of(context).dividerColor,
-                    pading: height * 0.02,
-                    backgroundcolor: Theme.of(context).highlightColor,
-                    onPressed: () => register(context),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      spacing: width * 0.04,
-                      children: [
-                        Image.asset(AppAssets.googleLogo),
-                        Text(
-                          AppLocalizations.of(context)!.signup_with_google,
-                          style: Theme.of(context).textTheme.labelSmall,
-                        ),
-                      ],
-                    ),
                   ),
                 ],
               ),
@@ -216,63 +215,5 @@ class RegisterScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  void _showError(String msg) {
-    ToastUtiles.toastMsg(
-      msg: msg,
-      backgroundColor: AppColors.redColor,
-      textColor: AppColors.whiteColor,
-    );
-  }
-
-  Future<void> register(BuildContext context) async {
-    if (formkey.currentState?.validate() != true) return;
-
-    try {
-      final credential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-            email: emailcontroller.text.trim(),
-            password: passwordcontroller.text,
-          );
-
-      await credential.user?.updateDisplayName(namecontroller.text.trim());
-
-      ToastUtiles.toastMsg(
-        msg: "Account created successfully",
-        backgroundColor: Colors.green,
-        textColor: AppColors.whiteColor,
-      );
-
-      debugPrint("id: ${credential.user?.uid}");
-
-      // ✅ غير الـ Navigator.pop بـ pushReplacementNamed
-      if (context.mounted) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.homeRouteName);
-      } // Go back to the login screen after a successful sign up
-      if (context.mounted) {
-        Navigator.pop(context);
-      }
-    } on FirebaseAuthException catch (e) {
-      switch (e.code) {
-        case 'weak-password':
-          _showError("The password provided is too weak");
-          break;
-        case 'email-already-in-use':
-          _showError("The account already exists for that email");
-          break;
-        case 'invalid-email':
-          _showError("Invalid email format");
-          break;
-        case 'network-request-failed':
-          _showError("No Internet Connection");
-          break;
-        default:
-          _showError("Something went wrong, try again");
-      }
-    } catch (e) {
-      debugPrint(e.toString());
-      _showError("Something went wrong, try again");
-    }
   }
 }

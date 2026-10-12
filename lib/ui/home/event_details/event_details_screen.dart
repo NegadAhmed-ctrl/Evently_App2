@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/firebase_utils.dart';
+import 'package:flutter_application_1/l10n/provider/app_theme_provider.dart'; // ✅ جديد
 import 'package:flutter_application_1/models/event.dart';
 import 'package:flutter_application_1/utils/app_colors.dart';
 import 'package:flutter_application_1/utils/app_routes.dart';
 import 'package:flutter_application_1/utils/size_utils.dart';
+import 'package:provider/provider.dart'; // ✅ جديد
 
 class EventDetailsScreen extends StatelessWidget {
   static const String routeName = 'event_details';
@@ -28,15 +30,42 @@ class EventDetailsScreen extends StatelessWidget {
     return months[month - 1];
   }
 
+  String _getImageForCategory(int index, bool isDark) {
+    List<String> lightImages = [
+      'assets/images/sport_light.png',
+      'assets/images/Birthday_light.png',
+      'assets/images/meeting_light.png',
+      'assets/images/Exhibition_light.png',
+      'assets/images/book club_light.png',
+    ];
+    List<String> darkImages = [
+      'assets/images/sport_black.png',
+      'assets/images/Birthday_Dark.png',
+      'assets/images/meeting_dark.png',
+      'assets/images/Exhibition_dark.png',
+      'assets/images/BookClub_dark.png',
+    ];
+    int safeIndex = (index > 0) ? index - 1 : 0;
+    if (safeIndex >= 0 && safeIndex < lightImages.length) {
+      return isDark ? darkImages[safeIndex] : lightImages[safeIndex];
+    }
+    return isDark
+        ? 'assets/images/sport_black.png'
+        : 'assets/images/sport_light.png';
+  }
+
   @override
   Widget build(BuildContext context) {
     final Event event = ModalRoute.of(context)!.settings.arguments as Event;
     var height = context.height;
     var width = context.width;
+    var themeProvider = Provider.of<AppThemeProvider>(
+      context,
+    ); // ✅ استدعاء الثيم
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppColors.darkBgColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: Text(
           "Event details",
           style: Theme.of(context).textTheme.titleMedium,
@@ -75,14 +104,19 @@ class EventDetailsScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(24),
                 image: DecorationImage(
                   fit: BoxFit.fill,
-                  image: AssetImage(event.eventimage),
+                  image: AssetImage(
+                    _getImageForCategory(
+                      event.categoryIndex,
+                      themeProvider.isDark,
+                    ),
+                  ), // ✅ تطبيق التعديل
                 ),
               ),
             ),
             SizedBox(height: height * 0.02),
 
             Text(
-              event.eventTitle,
+              event.title,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             SizedBox(height: height * 0.02),
@@ -103,12 +137,15 @@ class EventDetailsScreen extends StatelessWidget {
               child: Row(
                 children: [
                   Container(
-                    padding: EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.calendar_today, color: Colors.white),
+                    child: const Icon(
+                      Icons.calendar_today,
+                      color: Colors.white,
+                    ),
                   ),
                   SizedBox(width: width * 0.04),
                   Column(
@@ -134,7 +171,7 @@ class EventDetailsScreen extends StatelessWidget {
               "Description",
               style: Theme.of(context).textTheme.headlineMedium,
             ),
-            SizedBox(height: height * 1.0 / 100),
+            SizedBox(height: height * 0.01),
             Container(
               width: double.infinity,
               padding: EdgeInsets.all(width * 0.04),
@@ -147,7 +184,7 @@ class EventDetailsScreen extends StatelessWidget {
                 ),
               ),
               child: Text(
-                event.eventDescription,
+                event.description,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),

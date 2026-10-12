@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // عشان debugPrint
+import 'package:firebase_auth/firebase_auth.dart'; // عشان الـ userId
 import 'package:flutter_application_1/firebase_utils.dart';
 import 'package:flutter_application_1/l10n/app_localizations.dart';
 import 'package:flutter_application_1/l10n/provider/app_theme_provider.dart';
@@ -92,30 +94,32 @@ class _AddEventState extends State<AddEvent> {
         selectedTime.minute,
       );
 
-      var themeProvider = Provider.of<AppThemeProvider>(context, listen: false);
-
       Event event = Event(
-        eventCategoryIndex: selectedIndex,
-        eventName: listImages[selectedIndex - 1],
-        eventimage: themeProvider.isDark
-            ? listDarkImages[selectedIndex - 1]
-            : listLightImages[selectedIndex - 1],
-        eventTitle: titleController.text,
-        eventDescription: descriptionController.text,
+        categoryIndex: selectedIndex,
+        categoryName: listImages[selectedIndex - 1],
+        title: titleController.text,
+        description: descriptionController.text,
         dateTime: eventDateTime,
+        location: '', // الفيلد ده مطلوب في الموديل الجديد فهنبعته فاضي مؤقتاً
+        userId: FirebaseAuth.instance.currentUser?.uid ?? '',
       );
 
-      FirebaseUtils.addEventToFireStore(event)
+      FirebaseUtils.addEvent(event) // ✅ تم تعديل اسم الدالة
           .then((value) {
-            print("Event added successfully.");
+            debugPrint(
+              "Event added successfully.",
+            ); // ✅ تم التعديل لـ debugPrint
             ToastUtiles.toastMsg(
               msg: "Event added successfully.",
               backgroundColor: AppColors.greenColor,
               textColor: AppColors.whiteColor,
             );
+            Navigator.pop(
+              context,
+            ); // Optional: يرجع للشاشة اللي قبلها بعد ما يضيف
           })
           .catchError((error) {
-            print(error.toString());
+            debugPrint(error.toString()); // ✅ تم التعديل لـ debugPrint
             ToastUtiles.toastMsg(
               msg: error.toString(),
               backgroundColor: AppColors.redColor,

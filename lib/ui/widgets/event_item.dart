@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/firebase_utils.dart';
 import 'package:flutter_application_1/l10n/provider/app_theme_provider.dart';
 import 'package:flutter_application_1/models/event.dart';
-import 'package:flutter_application_1/ui/home/event_details/event_details_screen.dart'; // تأكد من عمل استيراد لشاشة التفاصيل
+import 'package:flutter_application_1/ui/home/event_details/event_details_screen.dart';
 import 'package:flutter_application_1/utils/size_utils.dart';
 import 'package:provider/provider.dart';
 
@@ -28,26 +28,51 @@ class EventItem extends StatelessWidget {
     return months[month - 1];
   }
 
+  // ✅ الدالة اتعدلت عشان تاخد isDark وترجع الصورة الصح
+  String _getImageForCategory(int index, bool isDark) {
+    List<String> lightImages = [
+      'assets/images/sport_light.png',
+      'assets/images/Birthday_light.png',
+      'assets/images/meeting_light.png',
+      'assets/images/Exhibition_light.png',
+      'assets/images/book club_light.png',
+    ];
+    List<String> darkImages = [
+      'assets/images/sport_black.png',
+      'assets/images/Birthday_Dark.png',
+      'assets/images/meeting_dark.png',
+      'assets/images/Exhibition_dark.png',
+      'assets/images/BookClub_dark.png',
+    ];
+
+    int safeIndex = (index > 0) ? index - 1 : 0;
+    if (safeIndex >= 0 && safeIndex < lightImages.length) {
+      return isDark ? darkImages[safeIndex] : lightImages[safeIndex];
+    }
+    return isDark
+        ? 'assets/images/sport_black.png'
+        : 'assets/images/sport_light.png';
+  }
+
   @override
   Widget build(BuildContext context) {
-    var hieght = context.height;
+    var height = context.height;
     var width = context.width;
     var themeProvider = Provider.of<AppThemeProvider>(context);
 
-    // ✅ غلفنا الـ Container بـ GestureDetector عشان يستجيب للضغط
     return GestureDetector(
       onTap: () {
         Navigator.pushNamed(
           context,
           EventDetailsScreen.routeName,
-          arguments: event, // بنبعت بيانات الإيفنت للتفاصيل
+          arguments: event,
         );
       },
       child: Container(
-        height: hieght * 0.25,
+        height: height * 0.25,
         padding: EdgeInsets.symmetric(
           horizontal: width * 0.02,
-          vertical: hieght * 0.01,
+          vertical: height * 0.01,
         ),
         decoration: BoxDecoration(
           color: Theme.of(context).highlightColor,
@@ -55,7 +80,10 @@ class EventItem extends StatelessWidget {
           border: Border.all(width: 2, color: Theme.of(context).dividerColor),
           image: DecorationImage(
             fit: BoxFit.fill,
-            image: AssetImage(event.eventimage),
+            // ✅ بنبعت هنا الـ theme الحالي
+            image: AssetImage(
+              _getImageForCategory(event.categoryIndex, themeProvider.isDark),
+            ),
           ),
         ),
         child: Column(
@@ -65,7 +93,7 @@ class EventItem extends StatelessWidget {
             Container(
               padding: EdgeInsets.symmetric(
                 horizontal: width * 0.02,
-                vertical: hieght * 0.005,
+                vertical: height * 0.005,
               ),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
@@ -93,14 +121,13 @@ class EventItem extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    event.eventTitle,
+                    event.title,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   IconButton(
                     onPressed: () {
-                      // ✅ toggle favorite
                       event.isFavorite = !event.isFavorite;
-                      FirebaseUtils.updateFavorite(event);
+                      FirebaseUtils.updateEvent(event);
                     },
                     icon: Icon(
                       event.isFavorite ? Icons.favorite : Icons.favorite_border,
